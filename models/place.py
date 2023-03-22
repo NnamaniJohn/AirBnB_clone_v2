@@ -3,22 +3,22 @@
 from models.base_model import BaseModel, Base
 from sqlalchemy import Column, String, ForeignKey, Integer, Float, Table
 from sqlalchemy.orm import relationship
-from models.amenity import Amenity
-from models.engine.file_storage import FileStorage
+import models
 from os import getenv
 
 storage_type = getenv("HBNB_TYPE_STORAGE")
 
 
 if storage_type == 'db':
-    metadata = Base.metadata
-    place_amenity = Table("place_amenity", metadata,
+    place_amenity = Table('place_amenity', Base.metadata,
                           Column('place_id', String(60),
-                                 ForeignKey('places.id'),
-                                 nullable=False),
+                                 ForeignKey('places.id', onupdate='CASCADE',
+                                            ondelete='CASCADE'),
+                                 primary_key=True),
                           Column('amenity_id', String(60),
-                                 ForeignKey('amenities.id'),
-                                 nullable=False))
+                                 ForeignKey('amenities.id', onupdate='CASCADE',
+                                            ondelete='CASCADE'),
+                                 primary_key=True))
 
 
 class Place(BaseModel, Base):
@@ -72,22 +72,11 @@ class Place(BaseModel, Base):
 
         @property
         def amenities(self):
-            """
-            returns the list of Amenity instances based on the attribute
-            amenity_ids that contains all Amenity.id linked to the Place
-            """
-            amenity_objs = []
-            for amenity_id in self.amenity_ids:
-                key = 'Amenity.' + amenity_id
-                if key in FileStorage.__objects:
-                    amenity_objs.append(FileStorage.__objects[key])
-            return amenity_objs
-
-        @amenities.setter
-        def amenities(self, obj):
-            """
-            adds an Amenity.id to the attribute amenity_ids if obj is
-            an instance of Amenity
-            """
-            if isinstance(obj, Amenity):
-                self.amenity_ids.append(obj.id)
+            """getter attribute returns the list of Amenity instances"""
+            from models.amenity import Amenity
+            amenity_list = []
+            all_amenities = models.storage.all(Amenity)
+            for amenity in all_amenities.values():
+                if amenity.place_id == self.id:
+                    amenity_list.append(amenity)
+            return amenity_list
