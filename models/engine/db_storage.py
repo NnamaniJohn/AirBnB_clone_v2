@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-"""create class DBStorage"""
+"""A template that create class DBStorage"""
 from os import getenv
 from sqlalchemy import (create_engine)
 from sqlalchemy.orm import sessionmaker, scoped_session
